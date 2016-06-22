@@ -1,19 +1,13 @@
-//
-//  ViewController.m
-//  Sample
-//
-//  Copyright (c) 2014-present, Facebook, Inc.  All rights reserved.
-//  This source code is licensed under the BSD-style license found in the
-//  LICENSE file in the root directory of this source tree. An additional grant
-//  of patent rights can be found in the PATENTS file in the same directory.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-//  FACEBOOK BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-//  ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-//  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+/* This file provided by Facebook is for non-commercial testing and evaluation
+ * purposes only.  Facebook reserves all rights not expressly granted.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * FACEBOOK BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 #import "ViewController.h"
 
@@ -22,7 +16,7 @@
 #import "BlurbNode.h"
 #import "LoadingNode.h"
 
-static const NSTimeInterval kWebResponseDelay = 1.0;
+static const NSTimeInterval kWebResponseDelay = 3.0;
 static const BOOL kSimulateWebResponse = YES;
 static const NSInteger kBatchSize = 20;
 
@@ -115,11 +109,8 @@ static const CGFloat kVerticalSectionPadding = 20.0f;
 - (void)appendMoreItems:(NSInteger)numberOfNewItems completion:(void (^)(BOOL))completion {
   NSArray *newData = [self getMoreData:numberOfNewItems];
   dispatch_async(dispatch_get_main_queue(), ^{
-    [_collectionView performBatchUpdates:^{
-      [_data addObjectsFromArray:newData];
-      NSArray *addedIndexPaths = [self indexPathsForObjects:newData];
-      [_collectionView insertItemsAtIndexPaths:addedIndexPaths];
-    } completion:completion];
+    [_data addObjectsFromArray:newData];
+    [_collectionView reloadData];
   });
 }
 
@@ -152,6 +143,11 @@ static const CGFloat kVerticalSectionPadding = 20.0f;
   [_collectionView.collectionViewLayout invalidateLayout];
 }
 
+- (BOOL)prefersStatusBarHidden
+{
+  return YES;
+}
+
 - (void)reloadTapped
 {
   [_collectionView reloadData];
@@ -160,12 +156,10 @@ static const CGFloat kVerticalSectionPadding = 20.0f;
 #pragma mark -
 #pragma mark ASCollectionView data source.
 
-- (ASCellNodeBlock)collectionView:(ASCollectionView *)collectionView nodeBlockForItemAtIndexPath:(NSIndexPath *)indexPath
+- (ASCellNode *)collectionView:(ASCollectionView *)collectionView nodeForItemAtIndexPath:(NSIndexPath *)indexPath
 {
   ItemViewModel *viewModel = _data[indexPath.item];
-  return ^{
-    return [[ItemNode alloc] initWithViewModel:viewModel];
-  };
+  return [[ItemNode alloc] initWithViewModel:viewModel];
 }
 
 - (ASCellNode *)collectionView:(UICollectionView *)collectionView nodeForSupplementaryElementOfKind:(nonnull NSString *)kind atIndexPath:(nonnull NSIndexPath *)indexPath {
@@ -186,7 +180,7 @@ static const CGFloat kVerticalSectionPadding = 20.0f;
 }
 
 - (CGSize)collectionView:(ASCollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout referenceSizeForFooterInSection:(NSInteger)section {
-  if (section == 0) {
+  if (section == 0 && _data.count > 0) {
     CGFloat width = CGRectGetWidth(self.view.frame);
     return CGSizeMake(width, [LoadingNode desiredHeightForWidth:width]);
   }
